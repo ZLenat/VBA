@@ -1,0 +1,21 @@
+'EXTRACT 3 COLUMNS FROM ACCESS
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim SQL As String
+    
+    dbLoc = ww_fcst_fldr & "PP BOM Explosion.accdb"
+    Set db = OpenDatabase(dbLoc)
+    
+    SQL = "SELECT UPN, FCST_MONTH, FCST_QTY "
+    SQL = SQL & "FROM FCST_PP "
+    
+    Set rs = db.OpenRecordset(SQL, dbOpenSnapshot)
+    
+    If rs.RecordCount = 0 Then
+    
+        MsgBox "NO DATA RETRIEVED FROM DATABASE", vbCritical
+        
+    End If
+    
+    Workbooks(main_file).Worksheets(bom_ws) _
+        .Range("AJ2").CopyFromRecordset rs
