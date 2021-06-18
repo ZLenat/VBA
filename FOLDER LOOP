@@ -1,0 +1,20 @@
+'LOOP THRU FOLDER, LOCK FILENAME
+Function loop_thru_fldr(path, wb, e_or_p)
+
+    file = Dir(path)
+    While file <> ""
+    
+        If InStr(1, file, wb, 1) > 0 Then
+            
+            loop_thru_fldr = file
+            Exit Function
+            
+        End If
+        
+        file = Dir
+    
+    Wend
+
+    MsgBox "file not found!"
+
+End Function
