@@ -1,0 +1,19 @@
+'CONFIRM AUTOFILTER
+Sub confirm_autofilter(filt_row)
+
+    If filt_row = "" Then
+        filt_row = 1
+    End If
+
+    With ActiveSheet
+    
+        If .AutoFilterMode = True Then
+            .Rows(filt_row).AutoFilter
+        End If
+        .Rows(filt_row).AutoFilter
+    
+    End With
+    
+    filt_row = ""
+
+End Sub
