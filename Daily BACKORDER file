@@ -1,0 +1,116 @@
+'BACK ORDERS MAIN
+Sub back_orders_main()
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Dim starttime As Long
+    Dim endtime As Long
+    Dim xtime As Long
+    
+    
+    starttime = Timer()
+    
+    
+    STR_BOR = "Stryker__Backorder_Report.xlsx"
+    
+    
+    bo_tpath = _
+        "T:\StrykerGSC\Metrics\PTTs\Data\NVCM\"
+    
+    'CHECK IF FILE OPEN
+    wb = STR_BOR
+    
+    If is_file_open(wb) = False Then
+
+        'OPEN FILE
+        path = bo_tpath
+        Call open_file(path, wb, read_only)
+
+    End If
+       
+    'CLEAR DATA
+    With Workbooks(wb).Worksheets("FNDWRR")
+    
+        .Range("G2:BJ2").Select
+        .Range(Selection, Selection.End(xlDown)).Select
+        Selection.ClearContents
+    
+    End With
+       
+    
+    'OPEN NEW BACK ORDER FILE
+    wb = "Stryker__Backorder_Report_"
+    wb = loop_thru_fldr(path, wb, e_or_p)
+    
+    Call open_file(path, wb, read_only)
+    
+    'COPY DATA FROM NEW BACK ORDER FILE
+    With Workbooks(wb).Worksheets(1)
+        
+        .Activate
+        .Range("A2:BD2").Select
+        .Range(Selection, Selection.End(xlDown)).Select
+        Selection.Copy
+        
+    End With
+    
+    'PASTE DATA INTO TEMPLATE FILE
+    Workbooks(STR_BOR).Activate
+    With Workbooks(STR_BOR).Worksheets("FNDWRR")
+        
+        .Range("G2").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+                
+        'VERIFY ROWS
+        a_lr = .Range("A2").End(xlDown).Row
+        g_lr = .Range("G2").End(xlDown).Row
+        
+        
+        If a_lr <> g_lr Then
+            
+            If a_lr > g_lr Then
+            
+                'DELETE FORMULAS
+                .Range("A" & g_lr + 1 & ":F" & g_lr + 1).Select
+                
+                    If a_lr - g_lr > 1 Then
+                        Range(Selection, Selection.End(xlDown)).Select
+                    End If
+                    
+                    Selection.ClearContents
+                
+            ElseIf g_lr > a_lr Then
+            
+                'COPY FORMULAS DOWN
+                .Range("A" & a_lr & ":F" & a_lr).Select
+                Selection.AutoFill Destination:=.Range("A" & a_lr & ":F" & g_lr)
+            End If
+        
+        End If
+                        
+    End With
+    
+    
+    'NO SAVE CLOSE FILE
+    Workbooks(wb).Close savechanges:=False
+     
+    
+    'SAVE NEW BACKORDER FILE
+    Workbooks(STR_BOR).Close savechanges:=True
+    
+    
+    'TIMER
+    endtime = Timer()
+    xtime = endtime - starttime
+    
+    
+    'END MSGBOX
+    MsgBox "Backorder Report File Prep Complete!" _
+        & vbCrLf & vbCrLf & "Processing Time: " & _
+        xtime & " seconds!", _
+        vbOKOnly + vbInformation, _
+        "Process Notification"
+        
+
+End Sub
