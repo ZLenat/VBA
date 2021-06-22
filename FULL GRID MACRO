@@ -1,0 +1,403 @@
+'GRID # PARSING
+Sub grid_parsing()
+
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+
+
+    'SELECT FILE
+    wb = find_file()
+    ws = getSheetName
+    
+    ER = "Error_Report"
+    
+'    wb = "Grid_MACRO.xlsm"
+    With Workbooks(wb).Worksheets(ws)
+        title_var = .Range("A1:V1")
+        Sheets.Add.Name = ER
+        Workbooks(wb).Worksheets(ER) _
+            .Range("A1:V1") = title_var
+        Workbooks(wb).Worksheets(ER) _
+            .Range("W1") = "REASON CODE"
+        .Activate
+        ActiveWindow.View = xlNormalView
+        
+        'UNHIDE COLUMNS & ROWS
+        .Cells.EntireColumn.Hidden = False
+        .Cells.EntireRow.Hidden = False
+        
+        'COPY SHEET
+        Workbooks(wb).Worksheets(ws).Copy _
+            after:=Workbooks(wb).Worksheets(ws)
+        ActiveSheet.Name = "Original Data"
+        
+        'TURN OFF FILTER
+        .Activate
+        Call confirm_autofilter(filt_row)
+    
+        'COLUMN VARIABLES
+        approval_COL = _
+            .Cells.Find("Approval Qualifier").Column
+        Date_COL = _
+            .Cells.Find("Approval Date").Column
+        code_COL = _
+            .Cells.Find("Code", lookat:=xlWhole).Column
+        config_COL = _
+            .Cells.Find("Proposed Config").Column
+        gCOL = _
+            .Cells.Find("Grid Number").Column
+            
+        'LAST ROWN & DATE
+        lr = .Range("A1").End(xlDown).Row
+        
+        curDate = Date
+        mDate = Format(Date, "mmm")
+        
+        
+        'DELETE IRRELEVANT ROWS
+        For i = lr To 2 Step -1
+            approval = .Cells(i, approval_COL)
+            If InStr(1, approval, "Expected", 1) = 0 Then
+                Rows(i).EntireRow.Delete
+            End If
+        Next
+        
+        
+        
+        'LOOP THROUGH LIST AND REMOVE ROWS W/O GRID #
+        lr = .Range("A1").End(xlDown).Row
+        For i = lr To 2 Step -1
+        
+            gnum = .Cells(i, gCOL)
+            If gnum = "" Then
+            
+                eLR = Workbooks(wb).Worksheets(ER) _
+                    .Range("A50000").End(xlUp).Offset(1).Row
+                dataVar = .Range("A" & i & ":Z" & i)
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("A" & eLR & ":Z" & eLR) = dataVar
+                'REASON CODE
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("W" & eLR) = "MISSING GRID #"
+                Rows(i).EntireRow.Delete
+            
+'                Call e_reporting(wb, i)
+                
+            End If
+        
+        Next
+        
+        'LOOP THROUGH COLUMN, REMOVE ROWS W/O COUNTRY CODE
+        lr = .Range("A1").End(xlDown).Row
+        For i = lr To 2 Step -1
+        
+            cCode = .Cells(i, code_COL)
+            If cCode = "" Then
+                
+                eLR = Workbooks(wb).Worksheets(ER) _
+                    .Range("A50000").End(xlUp).Offset(1).Row
+                dataVar = .Range("A" & i & ":Z" & i)
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("A" & eLR & ":Z" & eLR) = dataVar
+                'REASON CODE
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("W" & eLR) = _
+                    "MISSING COUNTRY CODE"
+                Rows(i).EntireRow.Delete
+            End If
+        
+        Next
+        
+        
+        'NEW LAST ROW
+        lr = .Range("A1").End(xlDown).Row
+        
+        'LOOP THROUGH COLUMN, REMOVE ROWS W/O CONFIG
+        For i = lr To 2 Step -1
+        
+            config = .Cells(i, config_COL)
+            If config = "" Then
+                eLR = Workbooks(wb).Worksheets(ER) _
+                    .Range("A50000").End(xlUp).Offset(1).Row
+                dataVar = .Range("A" & i & ":Z" & i)
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("A" & eLR & ":Z" & eLR) = dataVar
+                'REASON CODE
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("W" & eLR) = "MISSING CONFIG"
+                Rows(i).EntireRow.Delete
+            End If
+        
+        Next
+        
+        
+        'LOOP THROUGH COLUMN, REMOVE PAST DATES
+        lr = .Range("A1").End(xlDown).Row
+        For i = lr To 2 Step -1
+        
+            datCode = .Cells(i, Date_COL)
+            If InStr(1, datCode, "TBD", 1) <> 0 _
+            Or datCode < curDate Then
+                eLR = Workbooks(wb).Worksheets(ER) _
+                    .Range("A50000").End(xlUp).Offset(1).Row
+                dataVar = .Range("A" & i & ":Z" & i)
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("A" & eLR & ":Z" & eLR) = dataVar
+                'REASON CODE
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("W" & eLR) = "PAST APPROVAL DATE"
+                Rows(i).EntireRow.Delete
+            End If
+        
+        Next
+        
+        
+        'LOOP THROUGH COLUMN
+        lr = .Range("A1").End(xlDown).Row
+        For i = 2 To lr
+        
+CHECK:
+            grid_var = .Cells(i, gCOL)
+            
+            'CHECK FOR COMMA
+            If InStr(1, grid_var, ",", 1) Then
+            
+                If InStr(1, grid_var, Chr(10), 1) Then
+                    grid_var = _
+                        Replace(grid_var, Chr(10), "")
+                ElseIf InStr(1, grid_var, " ", 1) Then
+                    grid_var = _
+                        Replace(grid_var, " ", "")
+                End If
+            
+                row_data1 = .Range("A" & i & ":S" & i)
+                row_data2 = .Range("U" & i & ":V" & i)
+                
+                'COUNT COMMAS IN CELLS
+                cnt = CountCharacter(grid_var, ",")
+                
+                'EXTRACT GRID #
+                gnum_char = InStr(grid_var, ",")
+                gnum = Left(grid_var, gnum_char - 1)
+                
+                'INSERT NEW ROW
+                .Rows(i).Offset(1).Insert
+                
+                
+                'DUPLICATE ROW DATA
+                .Range("A" & i & ":S" & i) _
+                    .Offset(1) = row_data1
+                .Range("T" & i).Offset(1) = gnum
+                .Range("U" & i & ":V" & i) _
+                    .Offset(1) = row_data2
+                    
+                
+                'REDUCE GR
+                If Left(grid_varN, 1) = Chr(10) Then
+                    grid_varN = Right(grid_var, _
+                        Len(grid_var) - gnum_char - 2)
+                Else
+                    grid_varN = Right(grid_var, _
+                        Len(grid_var) - gnum_char)
+                End If
+                .Range("T" & i) = grid_varN
+                
+                
+                If cnt > 1 Then
+                    GoTo CHECK:
+                End If
+            
+            End If
+Nxt:
+        Next
+        
+                
+        
+        'CROSS REFERENCE AGAINST GRID # MAPPING FILE
+        MsgBox "Please select mapping file!", vbOKOnly
+        fldr_path = "T:\StrykerGSC\Zachary Lenat\"
+        mFile = find_file
+        Workbooks.Open Filename:=fldr_path & mFile
+        ActiveWindow.View = xlNormalView
+            
+        
+        
+        'LOOP THROUGH REMAINING GRID #S
+        lr = .Range("A1").End(xlDown).Row
+        
+        For i = lr To 2 Step -1
+        
+            gridNum = .Cells(i, gCOL)
+            
+            row_data1 = .Range("A" & i & ":S" & i)
+            row_data2 = .Range("U" & i & ":V" & i)
+            
+            'CHECK MAPPING FILE FOR GRID#
+            If Workbooks(mFile).Worksheets(1) _
+                .Cells.Find(gridNum) Is Nothing Then
+                
+                eLR = Workbooks(wb).Worksheets(ER) _
+                .Range("A50000").End(xlUp).Offset(1).Row
+                dataVar = .Range("A" & i & ":Z" & i)
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("A" & eLR & ":Z" & eLR) = dataVar
+                'REASON CODE
+                Workbooks(wb).Worksheets(ER) _
+                    .Range("W" & eLR) = _
+                    "GRID # NOT FOUND IN MAPPING FILE"
+                Rows(i).EntireRow.Delete
+                
+            End If
+            
+        Next
+        
+        
+        
+        'REMOVE DUPLICATES
+        lr = .Range("A1").End(xlDown).Row
+        For i = lr To 2 Step -1
+        
+            gnum = .Cells(i, gCOL)
+            For e = i - 1 To 2 Step -1
+                
+                cgnum = .Cells(e, gCOL)
+                If gnum = cgnum Then
+                
+                    eLR = Workbooks(wb).Worksheets(ER) _
+                    .Range("A50000").End(xlUp).Offset(1).Row
+                    dataVar = .Range("A" & i & ":Z" & i)
+                    Workbooks(wb).Worksheets(ER) _
+                        .Range("A" & eLR & ":Z" & eLR) = dataVar
+                    'REASON CODE
+                    Workbooks(wb).Worksheets(ER) _
+                        .Range("W" & eLR) = _
+                        "DUPLICATE GRID #"
+                    Rows(i).EntireRow.Delete
+                
+                End If
+                
+            Next
+        
+        
+        Next
+        
+           
+    End With
+    
+    Workbooks(mFile).Close savechanges:=False
+    Workbooks(wb).Save
+    
+    'END MSGBOX
+    MsgBox "Process Completed!", _
+        vbInformation + vbOKOnly
+    
+End Sub
+
+
+'COUNT SPECIFIC CHARACTERS IN STRING
+Public Function CountCharacter(value, ch)
+
+    cnt = 0
+    char_len = Len(value)
+    For c = 1 To char_len
+        
+        If Mid(value, c, 1) = "," Then
+            cnt = cnt + 1
+        End If
+        
+    Next
+    CountCharacter = cnt
+    
+End Function
+
+
+'SELECT FILE
+Function find_file()
+
+    With Application.FileDialog(msoFileDialogFilePicker)
+            
+        .InitialFileName = item_fldr
+        
+        If .Show <> 0 Then
+        
+            get_path = .SelectedItems(1)
+            Workbooks.Open (get_path)
+            find_file = ActiveWorkbook.Name
+        Else: MsgBox "No File Selected!" _
+            & vbCrLf & vbCrLf & _
+            "Process Terminated!", _
+            vbCritical + vbOKOnly
+            End
+        
+        End If
+            
+    End With
+End Function
+
+'CONFIRM AUTOFILTER
+Sub confirm_autofilter(filt_row)
+
+    If filt_row = "" Then
+        filt_row = 1
+    End If
+
+    With ActiveSheet
+    
+        If .AutoFilterMode = True Then
+            .Rows(filt_row).AutoFilter
+        End If
+        .Rows(filt_row).AutoFilter
+    
+    End With
+    
+    filt_row = ""
+
+End Sub
+
+
+'LOOP THROUGH TABS
+Function getSheetName()
+
+    ' Declare Current as a worksheet object variable.
+    Dim Current As Worksheet
+    
+    ' Loop through all of the worksheets in the active workbook.
+    For Each Current In Worksheets
+    
+        If InStr(1, Current.Name, "RA Monthly Report", 1) <> 0 Then
+        
+            c = Current.Name
+            getSheetName = c
+            Exit Function
+        End If
+         
+       ' Insert your code here.
+       ' This line displays the worksheet name in a message box.
+       MsgBox Current.Name
+    Next
+
+End Function
+
+
+
+Sub e_reporting(wbr, iRow)
+
+    'LAST ROW OF ERROR_REPORT TAB
+    eLR = Workbooks(wbr).Worksheets("Error_Report") _
+            .Range("A50000").End(xlUp).Offset(1).Row
+    'ROW DATA FROM RA MONTHLY REPORT
+    xVar = Workbooks(wbr).Worksheets(1) _
+        .Range("A" & iRow & ":Z" & iRow).value
+        
+        test = Workbooks(wbr).Worksheets(1).Range("A232")
+    'TRANSFER DATA TO ERROR_REPORT
+    Workbooks(wbr).Worksheets("Error_Report") _
+        .Range("A" & eLR & ":Z" & eLR) = xVar
+    'DELETE ROW
+    Workbooks(wbr).Worksheets(1) _
+        .Rows(iRow).EntireRow.Delete
+
+End Sub
+
+
+
