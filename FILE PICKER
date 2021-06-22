@@ -1,0 +1,25 @@
+
+'SELECT FILE
+Function find_file()
+
+    With Application.FileDialog(msoFileDialogFilePicker)
+            
+        .InitialFileName = item_fldr
+        
+        If .Show <> 0 Then
+        
+            get_path = .SelectedItems(1)
+            Workbooks.Open (get_path)
+            find_file = ActiveWorkbook.Name
+            
+        Else: MsgBox "No File Selected!" _
+            & vbCrLf & vbCrLf & _
+            "Process Terminated!", _
+            vbCritical + vbOKOnly
+            End
+        
+        End If
+            
+    End With
+    
+End Function
