@@ -1,0 +1,340 @@
+'EXPIRING SHELF LIFE MACRO
+Sub exp_shelf_life()
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    Dim starttime As Long
+    Dim endtime As Long
+    Dim xtime As Long
+    
+    starttime = Timer()
+    
+    zpath = _
+        "T:\StrykerGSC\Metrics\PTTs\Reports\"
+'    zpath = "T:\StrykerGSC\Zachary Lenat\"
+    nvcm_path = _
+        "T:\StrykerGSC\Metrics\PTTs\Data\NVCM\"
+    mstrPath = _
+        "T:\StrykerGSC\Metrics\General information\"
+
+    iMstr = "Item Master.xlsx"
+    tenK = _
+        "10000 - Inventory Inquiry Report.xlsx"
+    NV_wb = _
+        "NV General stock report.xlsx"
+    us_PTT = _
+        "US CDC PTT & Inventory Projections v1.xlsx"
+    venlo_PTT = _
+        "Venlo PTT & Inventory Projections v2.xlsx"
+    
+    'OPEN US PTT
+    Workbooks.Open Filename:=zpath & us_PTT
+    
+    'ADD 'SHELF_LIFE' TAB
+    Call sheet_check(us_PTT)
+    
+    'OPEN ITEM MASTER
+    Workbooks.Open Filename:=mstrPath & iMstr
+    
+    
+    '10000 FILE
+    Workbooks.Open Filename:=nvcm_path & tenK
+    With Workbooks(tenK).Worksheets(1)
+        fr = .Cells.Find _
+            ("Inv Org", lookat:=xlWhole).Offset(1).Row
+        lr = .Range("B" & fr).End(xlDown).Row
+        
+        'COLUMNS
+        flag_col = .Cells.Find _
+            ("Subinv Allow Reservable Flag").Column
+        upn_col = .Cells.Find("UPN Item Code").Column
+        ipn_col = .Cells.Find("IPN Item Code").Column
+        desc_col = .Cells.Find("Item desc").Column
+        lotnum_col = .Cells.Find("Lot Number").Column
+        lot_exp_col = .Cells.Find _
+            ("Lot Expiration Date").Column
+        ohq_col = .Cells.Find("OHQ").Column
+        
+        'LOOP THROUGH ROWS
+        For i = fr To lr
+            
+            If .Cells(i, flag_col) = "Y" Then
+                
+                upn = .Cells(i, upn_col)
+                IPN = .Cells(i, ipn_col)
+                desc = .Cells(i, desc_col)
+                LNum = .Cells(i, lotnum_col)
+                expr = .Cells(i, lot_exp_col)
+                ohq = .Cells(i, ohq_col)
+                
+                'EXTRACT DATA FROM ITEM MASTER
+                With Workbooks(iMstr).Worksheets("Sheet1")
+                    
+                    cnumCOL = .Cells.Find _
+                        ("CatalogNumber").Column
+                    pfam_col = .Cells.Find _
+                        ("Planning Family").Column
+                    gscm_col = .Cells.Find _
+                        ("GSCM", lookat:=xlWhole).Column
+                    
+                    imstr_row = _
+                        .Columns(cnumCOL).Find(upn).Row
+                    
+                    pfam = .Cells(imstr_row, pfam_col)
+                    gscm = .Cells(imstr_row, gscm_col)
+                    
+                End With
+                
+                'ADD DATA TO REPORT TAB
+                With Workbooks(us_PTT).Worksheets("Shelf_Life")
+                    nfr = .Range("A50000") _
+                        .End(xlUp).Offset(1).Row
+                    .Range("A" & nfr) = upn
+                    .Range("B" & nfr) = IPN
+                    .Range("C" & nfr) = desc
+                    .Range("D" & nfr) = LNum
+                    .Range("E" & nfr) = expr
+                    .Range("F" & nfr) = ohq
+                    .Range("G" & nfr) = pfam
+                    .Range("H" & nfr) = gscm
+                    
+                    cDat = Date
+                    
+                    x = DateDiff("d", cDat, expr)
+                    .Range("J" & nfr) = x
+                    
+                    'BUCKET CALC
+                    If x < 180 Then
+                        nx = "0-6"
+                    ElseIf x > 180 And x < 390 Then
+                        nx = "6.1-13"
+                    ElseIf x > 390 And x < 450 Then
+                        nx = "13.1-15"
+                    End If
+                    
+                    .Range("I" & nfr) = nx
+                End With
+                
+            End If
+        
+        Next
+    
+    End With
+    
+    'AUTOFIT TAB AND CLOSE FILES
+    Workbooks(us_PTT).Worksheets _
+        ("Shelf_Life").Columns.AutoFit
+    Workbooks(us_PTT).Worksheets _
+        ("UPN").Activate
+    Workbooks(us_PTT).Close True
+    Workbooks(tenK).Close False
+    
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+    'OPEN VENLO PTT FILE
+    Workbooks.Open zpath & venlo_PTT
+    
+    'ADD 'SHELF_LIFE' TAB
+    Call sheet_check(venlo_PTT)
+    
+    
+    'VENLO FILE
+    Workbooks.Open Filename:=nvcm_path & NV_wb
+    With Workbooks(NV_wb).Worksheets(1)
+    
+        fr = .Cells.Find _
+            ("Franchise", lookat:=xlWhole) _
+            .Offset(1).Row
+        lr = .Range("B" & fr).End(xlDown).Row
+        
+        'COLUMNS
+        inv_code_col = .Cells.Find _
+            ("Inventory_Organization_Code").Column
+        flag_col = .Cells.Find _
+            ("Subinv_Allow_Reservable_Flag").Column
+        upn_col = _
+            .Cells.Find("UPN_Item_Code").Column
+        ipn_col = _
+            .Cells.Find("IPN_Item_Code").Column
+        desc_col = _
+            .Cells.Find("Inventory_Item_desc").Column
+        lotnum_col = _
+            .Cells.Find("Lot_Number").Column
+        lot_exp_col = .Cells.Find _
+            ("Lot_Expiration_Date").Column
+        ohq_col = .Cells.Find("OHQ Qty").Column
+    
+    
+        'LOOP THROUGH ROWS
+        For i = fr To lr
+            
+            upn = .Cells(i, upn_col)
+            LNum = .Cells(i, lotnum_col)
+            
+            If .Cells(i, flag_col) = "Y" _
+            And .Cells(i, inv_code_col) = "ELA" _
+            And Left(upn, 1) <> "X" _
+            And LNum <> "" Then
+                
+                IPN = .Cells(i, ipn_col)
+                desc = .Cells(i, desc_col)
+                
+                expr = .Cells(i, lot_exp_col)
+                ohq = .Cells(i, ohq_col)
+                
+                'EACHES TO PACKS CONVERSION
+                ohq = ea_packs(upn, ohq)
+                
+                'EXTRACT DATA FROM ITEM MASTER
+                With Workbooks(iMstr).Worksheets("Sheet1")
+                    
+                    cnumCOL = .Cells.Find _
+                        ("CatalogNumber").Column
+                    pfam_col = .Cells.Find _
+                        ("Planning Family").Column
+                    gscm_col = .Cells.Find _
+                        ("GSCM", lookat:=xlWhole).Column
+                    
+                    
+                    'UPN NOT FOUND IN ITEM MASTER
+                    If .Columns(cnumCOL).Find(upn) Is Nothing Then
+                    
+                        pfam = "NOT FOUND IN ITEM MASTER"
+                        gscm = "NOT FOUND IN ITEM MASTER"
+                    Else
+                        imstr_row = _
+                            .Columns(cnumCOL).Find(upn).Row
+                        pfam = .Cells(imstr_row, pfam_col)
+                        gscm = .Cells(imstr_row, gscm_col)
+                    End If
+                    
+                End With
+                
+                'ADD DATA TO REPORT TAB
+                With Workbooks(venlo_PTT).Worksheets("Shelf_Life")
+                    nfr = .Range("A50000") _
+                        .End(xlUp).Offset(1).Row
+                    .Range("A" & nfr) = upn
+                    .Range("B" & nfr) = IPN
+                    .Range("C" & nfr) = desc
+                    .Range("D" & nfr) = LNum
+                    .Range("E" & nfr) = expr
+                    .Range("F" & nfr) = ohq
+                    .Range("G" & nfr) = pfam
+                    .Range("H" & nfr) = gscm
+                    
+                    cDat = Date
+                    
+                    x = DateDiff("d", cDat, expr)
+                    .Range("J" & nfr) = x
+                    
+                    'BUCKET CALC
+                    If x < 180 Then
+                        nx = "0-6"
+                    ElseIf x > 180 And x < 390 Then
+                        nx = "6.1-13"
+                    ElseIf x > 390 And x < 450 Then
+                        nx = "13.1-15"
+                    ElseIf x > 450 Then
+                        nx = "15+"
+                    End If
+                    
+                    .Range("I" & nfr) = nx
+                End With
+                
+            End If
+        
+        Next
+    
+    End With
+    
+    'AUTOFIT TAB AND CLOSE FILES
+    Workbooks(venlo_PTT).Worksheets _
+        ("Shelf_Life").Columns.AutoFit
+    Workbooks(venlo_PTT).Worksheets _
+        ("UPN").Activate
+    Workbooks(venlo_PTT).Close True
+    Workbooks(NV_wb).Close False
+    
+    
+    'CLOSE FILES
+    Workbooks(iMstr).Close False
+    
+
+    'TIMER
+    endtime = Timer()
+    xtime = endtime - starttime
+    
+    'END MSGBOX
+    MsgBox "Shelf Life Macro Complete!" _
+        & vbCrLf & vbCrLf & "Processing Time: " & _
+        xtime & " seconds!", _
+        vbOKOnly + vbInformation, _
+        "Process Notification"
+
+End Sub
+
+
+'CHECK FOR PIVOT TAB
+Sub sheet_check(cwb)
+
+    Dim ws As Worksheet
+    For Each ws In Workbooks(cwb).Worksheets
+        If ws.Name = "Shelf_Life" Then
+            Worksheets(ws.Name).Delete
+        End If
+    Next
+    
+    
+    ActiveWorkbook.Sheets.Add.Name = "Shelf_Life"
+    Worksheets("Shelf_Life").Move after:=Worksheets("IPN")
+    With Workbooks(cwb).Worksheets("Shelf_Life")
+        
+        'ADD COLUMN TITLES
+        .Range("A1") = "UPN"
+        .Range("B1") = "IPN"
+        .Range("C1") = "Item Desc"
+        .Range("D1") = "Lot_Number"
+        .Range("E1") = "Lot_Expiration"
+        .Range("F1") = "OHQ"
+        .Range("G1") = "Planning_Family"
+        .Range("H1") = "GSCM"
+        .Range("I1") = "BUCKET"
+        .Range("J1") = "DAYS"
+        
+        'ADD COMMENT EXPLAINING 'BUCKETS'
+        .Range("I1").AddComment _
+            "'Bucket' = remaining months categorization, based on remaining # of days before expiration of shelf life, each line item falls into 1 of 4 'buckets' or categories, ie 0-6 months remaining, 6.1-13 months remaining, 12-15 months remaining, 15+ months remaining"
+        
+        Rows(1).AutoFit
+    End With
+
+
+End Sub
+
+
+'CHECK FOR EACHES-TO-PACKS
+Function ea_packs(upn, ohq)
+
+    If upn = "M0014212421" _
+    Or upn = "M0034212421" _
+    Or upn = "077.0521" Then
+        'DIVIDE BY 5
+        ohq = ohq / 5
+    ElseIf upn = "077.0194" _
+    Or upn = "101035340" Then
+        'DIVIDE BY 3
+        ohq = ohq / 3
+    ElseIf upn = "099.0336" _
+    Or upn = "077.0098" _
+    Or upn = "101035263" Then
+        'DIVIDE BY 10
+        ohq = ohq / 10
+    End If
+        
+    ea_packs = ohq
+    
+End Function
