@@ -1,0 +1,29 @@
+'CURRENT, NEXT, & PREVIOUS MONTHS
+        cdat = mon & "/1/" & Yar
+        
+        'NEXT MONTH
+        If mon = 12 Then
+            ndat = "1/1/" & Yar
+        Else
+            ndat = mon + 1 & "/1/" & Yar
+        End If
+        
+        'PREVIOUS MONTH
+        If mon = 1 Then
+            pdat = "12/1/" & Yar
+        Else
+            pdat = mon - 1 & "/1/" & Yar
+        End If
+        
+        'LAST COLUMN LETTER
+        lcol = .Range("XEZ1").End(xlToLeft).Address
+        fp = InStr(1, lcol, "$", 1)
+        lp = InStrRev(lcol, "$")
+        lcol = Mid(lcol, fp + 1, lp - 1 - fp)
+        
+        
+        'FILTER FOR PREVIOUS/CURRENT/NEXT MONTH
+        ActiveSheet.Range("$A$1:$" & lcol & "$" & lr) _
+            .AutoFilter Field:=1, Operator:= _
+            xlFilterValues, Criteria2:=Array _
+            (1, pdat, 1, cdat, 1, ndat)
