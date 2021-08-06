@@ -1,0 +1,347 @@
+'SCHEDULE ADHERENCE MONTHLY REFRESH
+Sub Monthly_Sched_Adherence()
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    Dim starttime As Long
+    Dim endtime As Long
+    Dim xtime As Long
+    
+    starttime = Timer()
+
+    prevdat = Format(DateAdd("m", -1, Date), "mm/1/yyyy")
+'    cdat = Format(Date, "yyyy-mm-01")
+    dash_prev_dat = Format(prevdat, "yyyy-mm-01")
+
+    sa_fldr = _
+        "T:\StrykerGSC\Metrics\Schedule Adherence\New folder\"
+        
+    cdp_fldr = _
+        "T:\StrykerGSC\Metrics\WW Inventory & projections\" _
+        & dash_prev_dat & "\CBP\"
+    
+    FCST = "FCST.xlsx"
+    cork = "Cork_CDP.xlsx"
+    Mdla = "Medela_CDP.xlsx"
+    slc = "SLC_CDP.xlsx"
+    dem = "SYK_IBP_DEM_HIST_FCST_NV_"
+    
+    
+    'VERIFY LATEST FILE DOWNLOADED
+    q = MsgBox _
+        ("Latest Demantra File added to Schedule Adherence folder?", _
+        vbQuestion + vbYesNo)
+    If q = vbNo Then
+        MsgBox _
+            "PLEASE ADD NEW DEMANTRA FILE TO SCHEDULE ADHERENCE FOLDER!", _
+            vbCritical + vbOKOnly
+        End
+    End If
+    
+    'CLEAR FCST FILE AND UPDATE WITH NEW DATA
+    Workbooks.Open sa_fldr & FCST
+    With Workbooks(FCST).Worksheets(1)
+        .Range("A2").Select
+        .Range(Selection, Selection.End(xlToRight)).Select
+        .Range(Selection, Selection.End(xlDown)).ClearContents
+    
+    End With
+    
+    
+    'FIND & OPEN DEMANTRA FILE
+    dem = find_file(dem, sa_fldr)
+    
+    
+    'UPDATE FORECAST FILE
+    With Workbooks(dem).Worksheets(1)
+    
+        Call confirm_autofilter(filt_row)
+        
+        lr = .Range("A1").End(xlDown).Row
+        
+        'DATE CODE: YYYY-MM
+        mon = DatePart("m", Date)
+        Yar = DatePart("yyyy", Date)
+'        dateCode = Yar & "-" & mon
+        
+        
+        'CURRENT, NEXT, & PREVIOUS MONTHS
+        cdat = mon & "/1/" & Yar
+        
+        'NEXT MONTH
+        If mon = 12 Then
+            ndat = "1/1/" & Yar
+        Else
+            ndat = mon + 1 & "/1/" & Yar
+        End If
+        
+        'PREVIOUS MONTH
+        If mon = 1 Then
+            pdat = "12/1/" & Yar
+        Else
+            pdat = mon - 1 & "/1/" & Yar
+        End If
+        
+        'LAST COLUMN LETTER
+        lcol = .Range("XEZ1").End(xlToLeft).Address
+        fp = InStr(1, lcol, "$", 1)
+        lp = InStrRev(lcol, "$")
+        lcol = Mid(lcol, fp + 1, lp - 1 - fp)
+        
+        
+        'FILTER FOR PREVIOUS/CURRENT/NEXT MONTH
+        ActiveSheet.Range("$A$1:$" & lcol & "$" & lr) _
+            .AutoFilter Field:=1, Operator:= _
+            xlFilterValues, Criteria2:=Array _
+            (1, pdat, 1, cdat, 1, ndat)
+            
+        'COLUMN VARIABLES
+        sales_date_col = .Cells.Find("SALES_DATE").Column
+        item_col = .Cells.Find("ITEM", lookat:=xlWhole).Column
+        country_col = .Cells.Find("COUNTRY", lookat:=xlWhole).Column
+        fcst_cons_col = .Cells.Find("NV_FCST_CONSOLIDATED").Column
+        orvd_col = .Cells.Find("NV_SUPPLY_CHAIN_OVRD").Column
+        
+        lr = .Range("A1").End(xlDown).Row
+        
+        'COPY DATA TO FCST FILE
+        'SALES_DATE
+        .Range("A1:A" & lr).Copy _
+            Workbooks(FCST).Worksheets(1).Range("A1")
+        'ITEM
+        .Range("F1:F" & lr).Copy _
+            Workbooks(FCST).Worksheets(1).Range("B1")
+        'COUNTRY
+        .Range("G1:G" & lr).Copy _
+            Workbooks(FCST).Worksheets(1).Range("C1")
+        'NV_FCST_CONSOLIDATED
+        .Range("L1:L" & lr).Copy _
+            Workbooks(FCST).Worksheets(1).Range("D1")
+        'NV_SUPPLY_CHAIN_OVRD
+        .Range("H1:H" & lr).Copy _
+            Workbooks(FCST).Worksheets(1).Range("E1")
+        Workbooks(FCST).Worksheets(1).Range("E1") = _
+            "FCST_DF_FINAL_REV"
+        
+    End With
+    Workbooks(FCST).Close True
+    Workbooks(dem).Close False
+    
+    
+    
+    'UPDATE CORK/MEDELA/SLC FILES
+    Workbooks.Open sa_fldr & cork
+    With Workbooks(cork).Worksheets(1)
+    
+        .Range("B1") = prevdat
+        .Range("A2").Select
+        .Range(Selection, _
+            Selection.End(xlToRight)).Select
+        .Range(Selection, _
+            Selection.End(xlDown)).ClearContents
+    
+    End With
+    
+    'OPEN OTHER CORK FILE
+    item = "NV_CorkMFR_CBP_"
+    new_cork = find_file(item, cdp_fldr)
+    ws = sheet_check(new_cork, "CBP")
+    With Workbooks(new_cork).Worksheets(ws)
+        .Activate
+        
+        lr = .Range("A50000").End(xlUp).Row
+        ltr = col_ltr("UPN Item to be loaded")
+        .Range(ltr & "2:" & ltr & lr).Copy _
+            Workbooks(cork).Worksheets(1).Range("A2")
+            
+        .Range("E2:G" & lr).Copy _
+            Workbooks(cork).Worksheets(1).Range("B2")
+        
+    End With
+    Workbooks(cork).Close True
+    Workbooks(new_cork).Close False
+    
+    
+    'UPDATE MEDELA
+    Workbooks.Open sa_fldr & Mdla
+    With Workbooks(Mdla).Worksheets(1)
+    
+        .Range("B1") = prevdat
+        .Range("A2").Select
+        .Range(Selection, _
+            Selection.End(xlToRight)).Select
+        .Range(Selection, _
+            Selection.End(xlDown)).ClearContents
+    
+    End With
+    
+    'OPEN OTHER MEDELA FILE
+    item = "Medela Net Requirements"
+    new_mdla = find_file(item, cdp_fldr)
+    With Workbooks(new_mdla).Worksheets(1)
+        .Activate
+    
+        lr = .Range("A50000").End(xlUp).Row
+        ltr = col_ltr("Item Code")
+        .Range(ltr & "2:" & ltr & lr).Copy
+        Workbooks(Mdla).Worksheets(1).Range("A2").PasteSpecial xlPasteValues
+        .Range("G2:I" & lr).Copy Workbooks(Mdla).Worksheets(1).Range("B2")
+    
+    End With
+    Workbooks(Mdla).Close True
+    Workbooks(new_mdla).Close False
+    
+    
+    'UPDATE SLC
+    Workbooks.Open sa_fldr & slc
+    With Workbooks(slc).Worksheets(1)
+    
+        .Range("B1") = prevdat
+        .Range("A2").Select
+        .Range(Selection, _
+            Selection.End(xlToRight)).Select
+        .Range(Selection, _
+            Selection.End(xlDown)).ClearContents
+    
+    End With
+    
+    
+    'OPEN OTHER CORK FILE
+    item = "NV_SLC_CDP_"
+    new_slc = find_file(item, cdp_fldr)
+    ws = row_sheet_check _
+        (new_slc, _
+        "Planning Family (Formula Built-In, Drag Down the Col)")
+    With Workbooks(new_slc).Worksheets(ws)
+        .Activate
+    
+        lr = .Range("A1").End(xlDown).Row
+        ltr = col_ltr("UPN")
+        .Range(ltr & "2:" & ltr & lr).Copy Workbooks(slc).Worksheets(1).Range("A2")
+        .Range("F2:H" & lr).Copy Workbooks(slc).Worksheets(1).Range("B2")
+    
+    End With
+    Workbooks(slc).Close True
+    Workbooks(new_slc).Close False
+    
+    'TIMER
+    endtime = Timer()
+    xtime = endtime - starttime
+    
+    'END MSGBOX
+    MsgBox "PTT Monthly Refresh Complete!" _
+        & vbCrLf & vbCrLf & "Processing Time: " & _
+        xtime & " seconds!", _
+        vbOKOnly + vbInformation, _
+        "Process Notification"
+    
+End Sub
+
+
+
+
+'CONFIRM AUTOFILTER
+Sub confirm_autofilter(filt_row)
+
+    If filt_row = "" Then
+        filt_row = 1
+    End If
+
+    With ActiveSheet
+    
+        If .AutoFilterMode = True Then
+            .Rows(filt_row).AutoFilter
+        End If
+        .Rows(filt_row).AutoFilter
+    
+    End With
+    
+    filt_row = ""
+
+End Sub
+
+
+
+'EXTRACT ACTIVESHEET COLUMN LETTER
+Function col_ltr(fterm)
+
+    lcol = ActiveSheet.Cells _
+        .Find(fterm).Address
+    fp = InStr(1, lcol, "$", 1)
+    lp = InStrRev(lcol, "$")
+    lcol = _
+        Mid(lcol, fp + 1, lp - 1 - fp)
+    
+    col_ltr = lcol
+
+End Function
+
+
+
+'LOOP THRU FOLDER FIND & OPEN DEMANTRA FILE
+Function find_file(item, item_fldr)
+
+       
+    Dim fileName As Variant
+    fileName = Dir(item_fldr)
+
+    While fileName <> ""
+        
+        If InStr(1, fileName, item, 1) <> 0 Then
+        
+            Workbooks.Open item_fldr & fileName
+            find_file = fileName
+            Exit Function
+            
+        End If
+    
+        'Set the fileName to the next file
+        fileName = Dir
+    Wend
+    
+End Function
+
+
+
+Function sheet_check(swb, sws)
+
+
+    For Each ws In Workbooks(swb).Worksheets
+        
+        If InStr(1, ws.Name, sws, 1) Then
+            
+            sheet_check = ws.Name
+            Exit Function
+                  
+        
+        End If
+    
+    Next
+
+End Function
+
+
+
+'WORKSHEET LOOP SEARCH FOR TERM IN ROWS
+Function row_sheet_check(swb, fterm)
+
+    For Each ws In Workbooks(swb).Worksheets
+        
+        If Not Workbooks(swb).Worksheets(ws.Name).Cells.Find(fterm) Is Nothing Then
+        
+            row_sheet_check = ws.Name
+            Exit Function
+        
+        End If
+        
+        
+    Next
+
+End Function
+
+
+
+
+
+
