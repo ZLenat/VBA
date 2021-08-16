@@ -1,0 +1,1318 @@
+'WEEKLY BACKORDER MAIN
+Sub weekly_backorder_main_macro()
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Dim starttime As Long
+    Dim endtime As Long
+    Dim xtime As Long
+        
+    starttime = Timer()
+    
+  
+    
+    
+'    'SELECT FOLDER
+'fldr_choice:
+'    fldr_choice = InputBox("Please Enter Folder with Format: 'YYYY-MM-DD'")
+'    If fldr_choice = vbNullString Then
+'        GoTo fldr_choice:
+'    End If
+
+    STR_BOR = _
+        "Stryker__Backorder_Report.xlsx"
+    
+    bo_tpath = _
+        "T:\StrykerGSC\Metrics\Weekly Backorder Global\Global BO DB\Stryker Affiliate Reports\"
+    
+    
+    q = MsgBox("Backorder File Updated?", _
+        vbQuestion + vbYesNo)
+    If q = vbYes Then
+        GoTo file_format:
+    End If
+    
+    
+    
+    'CHECK IF FILE OPEN
+    wb = STR_BOR
+    
+    If is_file_open(wb) = False Then
+        'OPEN FILE
+        path = bo_tpath
+        Call open_file(path, wb, read_only)
+    End If
+       
+    'CLEAR DATA
+    With Workbooks(wb).Worksheets("FNDWRR")
+        .Activate
+        .Range("G2:BJ2").Select
+        .Range(Selection, Selection.End(xlDown)).Select
+        Selection.ClearContents
+    End With
+    
+    'OPEN NEW BACK ORDER FILE
+    wb = "Stryker__Backorder_Report_"
+    wb = loop_thru_fldr(path, wb, e_or_p)
+    Call open_file(path, wb, read_only)
+    
+    'COPY DATA FROM NEW BACK ORDER FILE
+    With Workbooks(wb).Worksheets(1)
+        .Activate
+        .Range("A2:BD2").Select
+        .Range(Selection, Selection.End(xlDown)).Select
+        Selection.Copy
+    End With
+    
+    'PASTE DATA INTO TEMPLATE FILE
+    Workbooks(STR_BOR).Activate
+    With Workbooks(STR_BOR).Worksheets("FNDWRR")
+    
+        .Range("G2").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+                
+        'VERIFY ROWS
+        a_lr = .Range("A2").End(xlDown).row
+        g_lr = .Range("G2").End(xlDown).row
+    
+        
+        If a_lr <> g_lr Then
+            
+            If a_lr > g_lr Then
+            
+                'DELETE FORMULAS
+                .Range("A" & g_lr + 1 & ":F" & g_lr + 1).Select
+                If a_lr - g_lr > 1 Then
+                    Range(Selection, Selection.End(xlDown)).Select
+                End If
+                Selection.ClearContents
+                
+            ElseIf g_lr > a_lr Then
+            
+                'COPY FORMULAS DOWN
+                .Range("A" & a_lr & ":F" & a_lr).Select
+                Selection.AutoFill Destination:= _
+                    .Range("A" & a_lr & ":F" & g_lr)
+                    
+            End If
+        
+        End If
+                        
+    End With
+    
+    
+    'NO SAVE CLOSE FILE
+    Workbooks(wb).Close False
+     
+    
+    'SAVE NEW BACKORDER FILE
+    Workbooks(STR_BOR).Close True
+    
+file_format:
+    q = ""
+    'OTHER FILES PREP
+    q = _
+        MsgBox("Files Formatted?", vbQuestion + vbYesNo)
+    If q = vbNo Then
+        Call backorder_file_formating
+    End If
+    q = ""
+    'PIVOTING PROCESS
+    q = _
+        MsgBox("New Backorder data uploaded to Access?", _
+            vbQuestion + vbYesNo)
+    If q = vbYes Then
+        q = ""
+        q = MsgBox("Perform Pivot Process?", vbQuestion + vbYesNo)
+            If q = vbYes Then
+                Call current_week_backorder_pivoting
+            End If
+    ElseIf q = vbNo Then
+        MsgBox "Please Upload Backorder Data to Access!", _
+            vbCritical + vbOKOnly
+            
+        
+        'OPEN STRYKER__BACKORDER FILE
+        Workbooks.Open bo_tpath & STR_BOR
+        
+        'OPEN ACCESS DB
+'        Dim appAccess As Access.Application
+'
+'        Set appAccess = New Access.Application
+'
+'        Call appAccess.OpenCurrentDatabase( _
+'            "T:\StrykerGSC\Metrics\Weekly Backorder Global\Global BO DB\" _
+'            & "Global_BO.accdb")
+'        appAccess.Visible = True
+        End
+        
+'        'GLOBAL_bo.accdb
+'        Call accessing
+        
+    End If
+
+    'LAST FRIDAYS DATE
+    LFriday = Format(Date - _
+        (Weekday(Date, vbFriday) - 1), _
+        "yyyy-mm-dd")
+        
+    'FRIDAY BEFORE LAST DATE
+    bFriday = Format(Date - _
+        (Weekday(Date, vbFriday) + 6), "mm-dd-yyyy")
+    
+'    last = Format(Date - (Weekday(Date, vbFriday) - 1), "yyyy-mm-dd")
+    'CREATE NEW FOLDER
+'    Dim FSO As New FileSystemObject
+'    Set FSO = CreateObject("Scripting.FileSystemObject")
+'
+'    FSO.CopyFolder "C:\Src", "C:\Dst\" 'Dst folder exists
+'    FSO.CopyFolder "C:\Src", "C:\DstNew" 'DstNew folder is created
+
+    q = ""
+    q = MsgBox("Update NV Weekly File?", vbQuestion + vbYesNo)
+    If q = vbYes Then
+        
+    ElseIf q = vbNo Then
+        End
+    End If
+
+    fldr_path = _
+        "T:\StrykerGSC\Metrics\Weekly Backorder Global\" _
+        & LFriday & "\"
+        
+        
+    'WORK IN PROGRESS
+    'call test
+    
+    
+ ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+ ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+ 
+ 
+ 
+    'WEEKLY BACKORDER REPORT NV
+    WBR_NV = "WEEKLY_BACKORDER_REPORT_NV.xlsx"
+    Workbooks.Open Filename:=fldr_path & WBR_NV
+    
+    'NV WEEKLY BACKORDER REPORT WEEK ENDING...
+    fwb = "NV Weekly Backorder Report Week Ending"
+    NVFile = loop_thru_fldr(fldr_path, fwb, e_or_p)
+    Workbooks.Open fldr_path & NVFile
+    
+    With Workbooks(NVFile).Worksheets("Backorder Detail")
+        
+        'CLEAR DATA
+        .Activate
+        Call confirm_autofilter(filt_row)
+        .Range("A2:Q2").Select
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.ClearContents
+        
+        'COPY DATA OVER
+        Workbooks(WBR_NV).Worksheets(1).Activate
+        Workbooks(WBR_NV).Worksheets(1).Range("A2:Q2").Select
+        Workbooks(WBR_NV).Worksheets(1) _
+            .Range(Selection, Selection.End(xlDown)).Copy _
+            Workbooks(NVFile).Worksheets("Backorder Detail").Range("A2")
+        Workbooks(WBR_NV).Close savechanges:=False
+        Workbooks(NVFile).Activate
+        ActiveWorkbook.RefreshAll
+        'UPDATE DATE TO LATEST FRIDAY
+        Workbooks(NVFile).Worksheets("Backorder Charts") _
+            .Range("A1") = Format(LFriday, "mm/dd/yyyy")
+            
+        'RESIZE COLUMNS
+        Call resize_cols(NVFile)
+        
+        'CLEAR COMMENTS IN ANALYSIS TAB COLUMN G
+        Workbooks(NVFile).Worksheets("Analysis") _
+            .Range("G9:G200").ClearContents
+    End With
+    
+    
+    'UPDATE DATES IN NV WEEKLY BACKORDER FILE REMINDER
+    MsgBox _
+        "Please update the dates to the 2 latest cycles in the 'Analysis' tab!", _
+        vbCritical + vbOKOnly
+    
+    
+'    Workbooks(NVFile).close Savechanges:=true
+    
+    'TIMER
+    endtime = Timer()
+    xtime = endtime - starttime
+    
+    
+    'END MSGBOX
+    MsgBox "Backorder Report File Prep Complete!" _
+        & vbCrLf & vbCrLf & "Processing Time: " & _
+        xtime & " seconds!", _
+        vbOKOnly + vbInformation, _
+        "Process Notification"
+        
+    'NO SAVE CLOSE MACRO FILE
+    'Workbooks("Weekly_Backorder_Report_MACRO.xlsm") _
+        .Close savechanges:=False
+        
+
+End Sub
+
+
+    
+
+'PIVOT TABLE
+Sub current_week_backorder_pivoting()
+
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+
+    Dim sht As Worksheet
+    Dim pvtCache As PivotCache
+    Dim pvt As PivotTable
+    Dim StartPvt As String
+    Dim SrcData As String
+'    Dim fldr_choice As String
+    
+fldr_choice:
+'    'SELECT FOLDER
+'    fldr_choice = InputBox("Please Enter Folder with Format: 'YYYY-MM-DD'")
+'    If fldr_choice = vbNullString Then
+'        GoTo fldr_choice:
+'    End If
+    
+'    fldr_path = _
+'        "T:\StrykerGSC\Metrics\Weekly Backorder Global\" _
+'        & fldr_choice & "\"
+    fldr_path = _
+        "T:\StrykerGSC\Metrics\Weekly Backorder Global\Global BO DB\Stryker Affiliate Reports\"
+
+    cwb = "CURRENT_WEEK_BACKORDER.xlsx"
+    
+    'OPEN FILE
+    Workbooks.Open Filename:=fldr_path & cwb
+    With Workbooks(cwb).Worksheets("CURRENT_WEEK_BACKORDER")
+        .Activate
+            
+        'COUNT WORKSHEETS, DELETE PREVIOUS PIVOT TAB IF PRESENT
+        Call remove_pivot_tab
+            
+        'LAST ROW
+        lr = .Range("A1").End(xlDown).row
+        
+        'DETERMINE RANGE OF DATA FOR PIVOTING
+        SrcData = _
+            ActiveSheet.Name & "!" & Range("A1:R" & lr) _
+            .Address(ReferenceStyle:=xlR1C1)
+        
+        'CREATE NEW WORKSHEET
+        Set sht = Sheets.Add
+        sht.Name = "Pivot"
+
+        'PIVOT LOCATION
+        StartPvt = sht.Name & "!" & sht.Range("A3") _
+            .Address(ReferenceStyle:=xlR1C1)
+            
+        'Create Pivot Cache from Source Data
+        Set pvtCache = ActiveWorkbook.PivotCaches.Create( _
+            SourceType:=xlDatabase, _
+            SourceData:=SrcData)
+
+        'Create Pivot table from Pivot Cache
+        Set pvt = pvtCache.CreatePivotTable( _
+            TableDestination:=StartPvt, _
+            TableName:="PvtTable1")
+      
+
+        'BACKORDER_UNITS - VALUES
+        ActiveSheet.PivotTables("PvtTable1") _
+            .AddDataField ActiveSheet.PivotTables( _
+            "PvtTable1").PivotFields("BACKORDER_UNITS"), _
+            "Sum of BACKORDER_UNITS", xlSum
+        
+        
+        'BACKORDER_UNITS_ASP - VALUES
+        ActiveSheet.PivotTables("PvtTable1") _
+            .AddDataField ActiveSheet.PivotTables( _
+            "PvtTable1").PivotFields("BACKORDER_VALUE_ASP"), _
+            "Sum of BACKORDER_VALUE_ASP", xlSum
+            
+            
+        'ADD CATEGORY TO FILTER
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("CATEGORY")
+            .Orientation = xlPageField
+            .Position = 1
+        End With
+        
+        'DESCRIPTION
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("DESCRIPTION")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+        
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("DESCRIPTION").Orientation = xlHidden
+            
+        'UPN
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("UPN")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("UPN").Orientation = xlHidden
+            
+        'SEGMENT
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("SEGMENT")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("SEGMENT").Orientation = xlHidden
+        
+        'PLANNING_FAMILY
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("PLANNING_FAMILY")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("PLANNING_FAMILY").Orientation = xlHidden
+        
+        'PRODUCT LINE
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("PRODUCT_LINE")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+        
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("PRODUCT_LINE").Orientation = xlHidden
+    
+        'PRODUCT_LINE_GROUP
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("PRODUCT_LINE_GRP")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("PRODUCT_LINE_GRP").Orientation = xlHidden
+        
+        'REGION
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("REGION")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("REGION").Orientation = xlHidden
+        
+        'REGION_GRP
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("REGION_GRP")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("REGION_GRP").Orientation = xlHidden
+        
+        'MFG_SITE
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("MFG_SITE")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+    
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("MFG_SITE").Orientation = xlHidden
+            
+        'MFG_SITE
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("COUNTRY_CODE")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        '????
+        '????
+        '????
+        '????
+        'VERIFY FOR COUNTRY_CODE FILTERED ON 'DIRECT CUSTOMER'
+        '????
+        '????
+        '????
+        '????
+        
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("CATEGORY").CurrentPage = "(All)"
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("CATEGORY")
+            .PivotItems("Intercompany").Visible = False
+        End With
+        ActiveSheet.PivotTables("PvtTable1").PivotFields("CATEGORY"). _
+            EnableMultiplePageItems = True
+        
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+        
+        ActiveSheet.PivotTables("PvtTable1") _
+            .PivotFields("COUNTRY_CODE").Orientation = xlHidden
+        
+        'COUNTRY
+        With ActiveSheet.PivotTables("PvtTable1").PivotFields("COUNTRY")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    
+        'PIVOT LOOK TO CHECK FOR ERRORS
+        Call pivot_loop
+        
+        
+        
+        
+        'CROSS REFERENCE VALUES
+        file_10002 = "10002 - Open Sales Order.xlsx"
+        Argentina_file = "Argentina Backorder Global Supply Chain.xlsx"
+        boReport = "bo report.xlsx"
+        Brazil_file = "Brazil Backorder Global Supply Chain.xlsx"
+        JPN_file = "Japan_NV BackOrder_Report.xlsx"
+        NV_ICR = "NV Inventory Control Report.xlsx"
+        CANADA_file = "NV Open Orders - Canada - for GSC.xlsx"
+
+
+
+        'COMPARE US
+        Workbooks.Open Filename:=fldr_path & file_10002
+        With Workbooks(file_10002).Worksheets("GSC-Brand_2")
+            volCOL = .Cells.Find _
+                ("BackOrder Qty", lookat:=xlWhole, SearchDirection:=xlPrevious).Column
+            sumCOL = .Cells.Find _
+                ("Order Amount $", lookat:=xlWhole, SearchDirection:=xlPrevious).Column
+            sumROW = .Cells.Find _
+                ("Overall Total", lookat:=xlWhole).row
+            vol = .Cells(sumROW, volCOL)
+            sumVAL = .Cells(sumROW, sumCOL)
+        End With
+        Workbooks(file_10002).Close savechanges:=False
+
+        'USER REVIEW
+        Call pivot_msgbox("United States", vol, sumVAL)
+
+        'COMPARE ARGENTINA
+        Workbooks.Open Filename:=fldr_path & Argentina_file
+        With Workbooks(Argentina_file).Worksheets("BO GSC Argentina")
+            .Activate
+            'ROWS
+            fr = .Cells.Find("BOUnitsNet", _
+                lookat:=xlWhole).Offset(1).row
+            lr = .Cells.Find("BOUnitsNet", _
+                lookat:=xlWhole).End(xlDown).row
+            'VALUES
+            vol = WorksheetFunction.Sum _
+                (Range("D" & fr & ":D" & lr))
+            sumVAL = WorksheetFunction.Sum _
+                (Range("E" & fr & ":E" & lr))
+        End With
+        Workbooks(Argentina_file).Close savechanges:=False
+
+        'USER REVIEW
+        Call pivot_msgbox("Argentina", vol, sumVAL)
+
+        'COMPARE CHINA
+        Workbooks.Open Filename:=fldr_path & boReport
+        With Workbooks(boReport)
+            Dim Current As Worksheet
+
+            ' Loop through all of the worksheets in the active workbook.
+            For Each sname In Worksheets
+                sname.Activate
+                If Range("B1") = "dealer name" Then
+                    'ROWS
+                    fr = ActiveSheet.Cells.Find _
+                        ("UPN73", lookat:=xlWhole).Offset(1).row
+                    lr = ActiveSheet.Cells.Find _
+                        ("UPN73", lookat:=xlWhole).End(xlDown).row
+                    'VALUES
+                    vol = WorksheetFunction.Sum _
+                        (Range("H" & fr & ":H" & lr))
+                    sumVAL = WorksheetFunction.Sum _
+                        (Range("J" & fr & ":J" & lr))
+                End If
+            Next
+
+        End With
+        Workbooks(boReport).Close savechanges:=False
+
+        'USER REVIEW
+        Call pivot_msgbox("China", vol, sumVAL)
+
+
+        'COMPARE BRAZIL
+        Workbooks.Open Filename:=fldr_path & Brazil_file
+        With Workbooks(Brazil_file).Worksheets(1)
+            .Activate
+            'ROWS
+            fr = .Cells.Find("BOUnitsNet", _
+                lookat:=xlWhole).Offset(1).row
+            lr = .Cells.Find("BOUnitsNet", _
+                lookat:=xlWhole).End(xlDown).row
+            'VALUES
+            vol = WorksheetFunction.Sum _
+                (Range("D" & fr & ":D" & lr))
+            sumVAL = WorksheetFunction.Sum _
+                (Range("E" & fr & ":E" & lr))
+        End With
+        Workbooks(Brazil_file).Close savechanges:=False
+
+        'USER REVIEW
+        Call pivot_msgbox("Brazil", vol, sumVAL)
+
+
+        'COMPARE JAPAN
+        Workbooks.Open Filename:=fldr_path & JPN_file
+        With Workbooks(JPN_file).Worksheets("Item")
+            .Activate
+            'ROWS
+            fr = .Cells.Find("Rev", lookat:=xlWhole).Offset(1).row
+            lr = .Cells.Find("Rev", lookat:=xlWhole).End(xlDown).row
+            'VALUES
+            vol = WorksheetFunction.Sum _
+                (Range("A" & fr & ":A" & lr), _
+                Range("B" & fr & ":B" & lr))
+            sumVAL = WorksheetFunction.Sum _
+                (Range("N" & fr & ":N" & lr))
+        End With
+        Workbooks(JPN_file).Close savechanges:=False
+
+        'USER REVIEW
+        Call pivot_msgbox("Japan", vol, sumVAL)
+
+
+        'COMPARE KOREA & INDIA
+        Workbooks.Open Filename:=fldr_path & NV_ICR
+        With Workbooks(NV_ICR).Worksheets(1)
+            'ROWS
+            fr = _
+                .Cells.Find("Backorder", lookat:=xlWhole) _
+                    .Offset(1).row
+            lr = _
+                .Cells.Find("Backorder", lookat:=xlWhole) _
+                    .End(xlDown).row
+            
+            'COLUMNS
+            volCOL = _
+                .Cells.Find("Backorder", lookat:=xlWhole).Column
+            sumCOL = _
+                .Cells.Find("Backorder Value in USD$", lookat:=xlPart).Column
+
+            vol = 0
+            sumVAL = 0
+
+            'LOOP THRU VALUES
+            For i = fr To lr
+
+                SDC = .Range("A" & i)
+                If InStr(1, SDC, "India", 1) _
+                Or InStr(1, SDC, "Korea", 1) Then
+                    'VALUES
+'                    vol = vol + .Cells(i & volCOL)
+'                    sumVAL = sumVAL + .Cells(i & sumCOL)
+                    vol = vol + .Range("G" & i)
+                    sumVAL = sumVAL + .Range("H" & i)
+                End If
+
+            Next
+
+        End With
+        Workbooks(NV_ICR).Close savechanges:=False
+
+        'USER REVIEW
+        Call korea_india_msgbox("Korea+India", vol, sumVAL)
+        
+        'COMPARE CANADA
+        Workbooks.Open Filename:=fldr_path & CANADA_file
+        With Workbooks(CANADA_file).Worksheets("Details_2")
+                .Activate
+            'ROWS
+            fr = .Cells.Find("Order Line Type").Offset(1).row
+            lr = .Cells.Find("SC Backorder Qty").End(xlDown).row
+            'COLUMNS
+            volCOL = .Cells.Find("SC Backorder Qty").Column
+            sumCOL = .Cells.Find("SC Backorder USD").Column
+            OLT_col = .Cells.Find("Order Line Type").Column
+            
+            vol = 0
+            sumVAL = 0
+            
+            For i = fr To lr
+            
+                SDC = .Cells(i, OLT_col)
+                If SDC = "CA STANDARD L" Then
+                    'VALUES
+                    vol = vol + .Cells(i, volCOL)
+                    sumVAL = sumVAL + .Cells(i, sumCOL)
+                End If
+                
+            Next
+            
+        End With
+        Workbooks(CANADA_file).Close savechanges:=False
+        
+        'USER REVIEW
+        Call pivot_msgbox("Canada", vol, sumVAL)
+        
+        
+        'BACK ORDER REPORT
+        STR_BORr = "Stryker__Backorder_Report.xlsx"
+        Workbooks.Open Filename:=fldr_path & STR_BORr
+        Workbooks(STR_BORr).Worksheets("Sheet2").Activate
+        'REFRESH DATA
+        ActiveWorkbook.RefreshAll
+            
+        With Workbooks(cwb).Worksheets("Pivot")
+            .Activate
+            fr = .Cells.Find("Row Labels").Offset(1).row
+            lr = .Cells.Find("Row Labels").End(xlDown).row - 1
+            rgnCOL = .Cells.Find("Row Labels").Column
+            
+            'ADD HIGHLIGHT & VARIANCE COLUMNS
+            .Cells.Find("Sum of BACKORDER_VALUE_ASP") _
+                .Offset(, 1) = "Highlight"
+            .Cells.Find("Sum of BACKORDER_VALUE_ASP") _
+                .Offset(, 2) = "Variance"
+                
+            'ADD SUM FIELDS
+            .Cells.Find("Grand Total").Offset(, 3) _
+                .Formula = "=sum(D" & fr & ":D" & lr & ")"
+            .Cells.Find("Grand Total").Offset(, 4) _
+                .Formula = "=sum(E" & fr & ":E" & lr & ")"
+                
+            
+            'LOOP THROUGH LIST
+            For i = fr To lr
+                country = .Cells(i, rgnCOL)
+                
+                'SKIP COLORED CELLS
+                If .Cells(i, rgnCOL).Interior.ColorIndex = 3 _
+                Or .Cells(i, rgnCOL).Interior.ColorIndex = 4 Then
+                    GoTo NextIteration:
+                End If
+                
+                'CHECK IF COUNTRY IN CWB FILE
+                If Not Workbooks(STR_BORr).Worksheets("Sheet2").Cells.Find(country) Is Nothing Then
+                    vol = Workbooks(STR_BORr).Worksheets("Sheet2") _
+                        .Cells.Find(country).Offset(, 1)
+                    
+                    'ADD VALUE NEXT TO BACKORDER LIST
+                    .Cells(i, rgnCOL).Offset(, 3) = vol
+                    .Cells(i, rgnCOL).Offset(, 4) _
+                        .Formula = "=B" & i & "-D" & i
+                    
+                Else
+                    'HIGHLIGHT COUNTRY IF NOT ON BOTH LISTS
+                    .Cells(i, rgnCOL).Interior.ColorIndex = 3
+                    
+                End If
+NextIteration:
+            Next
+            
+            'CLOSE BACKORDER FILE
+            Workbooks(STR_BORr).Close savechanges:=True
+            
+            
+'            ActiveSheet.PivotTables("PivotTable2") _
+'                .PivotFields("Deliver Line Status").CurrentPage = "(All)"
+'            ActiveSheet.PivotTables("PivotTable2") _
+'                .PivotFields("Deliver Line Status").CurrentPage = "(All)"
+'            With ActiveSheet.PivotTables("PivotTable2").PivotFields("Deliver Line Status")
+'                .PivotItems("Not Ready to Release").Visible = False
+'            End With
+'
+        End With
+        
+        'END MSGBOX
+        MsgBox "Process Completed!" & vbCrLf & vbCrLf & _
+            "Please Review 'Current_Week_Backorder' File!", _
+            vbInformation + vbOKOnly
+                
+    End With
+
+End Sub
+
+
+'BACKORDER FILE FORMATING
+Sub backorder_file_formating()
+
+    fldr_path = _
+        "T:\StrykerGSC\Metrics\Weekly Backorder Global\Global BO DB\Stryker Affiliate Reports\"
+    
+    file_10002 = "10002 - Open Sales Order.xlsx"
+    int_10002 = "10002 - Open Sales Order Internal.xlsx"
+    Argentina_file = "Argentina Backorder Global Supply Chain.xlsx"
+    boReport = "bo report.xlsx"
+    Brazil_file = "Brazil Backorder Global Supply Chain.xlsx"
+    JPN_file = "Japan_NV BackOrder_Report.xlsx"
+    NV_ICR = "NV Inventory Control Report.xlsx"
+    CANADA_file = "NV Open Orders - Canada - for GSC.xlsx"
+    
+    '10002 Files
+    For i = 1 To 2
+
+        If i = 1 Then
+            file_to_open = file_10002
+        ElseIf i = 2 Then
+            file_to_open = int_10002
+        End If
+
+        Workbooks.Open Filename:=fldr_path & file_to_open
+        With Workbooks(file_to_open).Worksheets("GSC-BackOrder-Details_5")
+            .Activate
+row:
+            'ROW CLEARING
+            If .Cells.Find("Current Sales Territory", lookat:=xlWhole).row <> 1 Then
+                .Rows(1).EntireRow.Delete
+                GoTo row:
+            End If
+            ActiveWorkbook.Close savechanges:=True
+            
+        End With
+
+    Next
+
+    'ARGENTINA FILE
+    Workbooks.Open Filename:=fldr_path & Argentina_file
+    With Workbooks(Argentina_file).Worksheets("BO GSC Argentina")
+
+        'COPY PASTE AS VALUES
+        .Activate
+        .Range("A1").CurrentRegion.Copy
+        .Range("A1").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+        
+        'CONFIRM AUTOFILTER
+        Call confirm_autofilter(filt_row)
+        
+        'DESCENDING SORT COLUMN
+        colVAR = "Item Number"
+        Call sort_fields(colVAR)
+
+        'VERIFY COLUMN TITLE
+        .Cells.Find("BO$", lookat:=xlPart) = "BO$Net"
+
+        ActiveWorkbook.Close savechanges:=True
+
+    End With
+    
+    'CHINA BO FILE
+    Workbooks.Open Filename:=fldr_path & boReport
+
+    Dim sname As Worksheet
+
+    'LOOP THROUGH FILE SHEETS FOR CORRECT SHEET
+    
+    For Each sname In Worksheets
+
+        sname.Activate
+
+        If ActiveSheet.Range("B1") = "dealer name" Then
+            With ActiveSheet
+
+                'COPY PASTE AS VALUES
+                .Range("A1").CurrentRegion.Copy
+                .Range("A1").PasteSpecial Paste:=xlPasteValues
+                Application.CutCopyMode = False
+                
+                'CONFIRM AUTOFILTER
+                Call confirm_autofilter(filt_row)
+
+                'DESCENDING SORT
+                colVAR = "UPN73"
+                Call sort_fields(colVAR)
+
+            End With
+        End If
+
+    Next
+
+    Workbooks(boReport).Close savechanges:=True
+        
+    'BRAZIL FILE
+    Workbooks.Open Filename:=fldr_path & Brazil_file
+    With Workbooks(Brazil_file).Worksheets(1)
+        .Activate
+
+        'CHECK IF TOP ROWS NEEDS DELETED
+BRZL_row:
+        If .Cells.Find("Item Number", lookat:=xlWhole).row <> 1 Then
+            .Rows(1).Delete
+            GoTo BRZL_row
+        End If
+        
+        'COPY PASTE AS VALUES
+        .Range("A1").CurrentRegion.Select
+        .Range("A1").CurrentRegion.Copy
+        .Range("A1").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+
+        'CONFIRM AUTOFILTER
+        Call confirm_autofilter(filt_row)
+
+        'SORT ALL
+        colVAR = "Item Number"
+        Call sort_fields(colVAR)
+
+        Workbooks(Brazil_file).Close savechanges:=True
+
+    End With
+    
+    'JAPAN FILE
+    Workbooks.Open Filename:=fldr_path & JPN_file
+    With Workbooks(JPN_file).Worksheets("Item")
+        .Activate
+jpn_row:
+        'HEADER CLEARING
+        If .Cells.Find("Inventory Item Code").row <> 1 Then
+            .Rows(1).EntireRow.Delete
+            GoTo jpn_row
+        End If
+        
+        'COPY PASTE AS VALUES
+        .Range("A1").CurrentRegion.Copy
+        .Range("A1").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+
+        Workbooks(JPN_file).Close savechanges:=True
+
+    End With
+
+
+    'NV INVENTORY COLTR FILE
+    Workbooks.Open Filename:=fldr_path & NV_ICR
+    With Workbooks(NV_ICR).Worksheets(1)
+nv_row:
+        'ROW CLEARING
+        If .Cells.Find("Material UPN").row <> 1 Then
+            .Rows(1).EntireRow.Delete
+            GoTo nv_row
+        End If
+        Workbooks(NV_ICR).Close savechanges:=True
+
+    End With
+
+    'NV CANADA OPEN ORDERS
+    Workbooks.Open Filename:=fldr_path & CANADA_file
+    With Workbooks(CANADA_file).Worksheets("Details_2")
+        .Activate
+CAN_ROW:
+        'ROW CLEARING
+        If .Cells.Find("Inventory Item Code").row <> 1 Then
+            .Rows(1).EntireRow.Delete
+            GoTo CAN_ROW
+        End If
+        Workbooks(CANADA_file).Close savechanges:=True
+
+    End With
+
+End Sub
+
+
+
+
+'LOOK THROUGH PIVOT TABLES
+Sub pivot_loop()
+
+    'LAST ROW
+    pLR = ActiveSheet.Range("A200000").End(xlUp).row - 1
+    pFR = ActiveSheet.Cells.Find("Row Labels").row + 1
+    
+    For i = pFR To pLR
+    
+        'CHECK IF 1ST VALUE PRESENT
+        If ActiveSheet.Range("A" & i) = "" _
+        And ActiveSheet.Range("B" & i) <> "" _
+        And ActiveSheet.Range("C" & i) <> "" Then
+            
+            GoTo data_invalid:
+            
+        End If
+    
+        'CHECK IF VALUE IN BACKORDER_UNITS
+        If ActiveSheet.Range("B" & i) = "" _
+        And ActiveSheet.Range("C" & i) <> "" _
+        Then
+            
+            GoTo data_invalid:
+            
+        ElseIf ActiveSheet.Range("B" & i) <> "" _
+        And ActiveSheet.Range("C" & i) = "" _
+        Then
+data_invalid:
+            Range("A" & i & ":C" & i).Interior.ColorIndex = 3
+            MsgBox "DATA INCONSISTENCY ISSUE DETECTED!" _
+            & vbCrLf & vbCrLf & _
+            "PLEASE REVIEW PIVOT TABLES!", vbCritical + vbOKOnly
+'            End
+            
+        End If
+    
+    Next
+
+End Sub
+
+
+'HIGHLIGHT PIVOT TABLE
+Sub pivot_highlight(anchor)
+
+    
+
+
+End Sub
+
+
+'MESSAGE BOX ALERT & CHOICES
+Sub pivot_msgbox(country, qty, amt)
+
+    'ROUNDING
+    qty = Round(qty, 2)
+    amt = Round(amt, 2)
+    country = UCase(country)
+
+    cwb = "CURRENT_WEEK_BACKORDER.xlsx"
+    
+    With Workbooks(cwb).Worksheets("Pivot")
+        
+        'PIVOT VALUES
+        pvtVOL = .Cells.Find(country, lookat:=xlWhole).Offset(, 1)
+        pvtSUM = .Cells.Find(country, lookat:=xlWhole).Offset(, 2)
+        
+    
+        'USER INPUT MSGBOX
+        choice = MsgBox("Are these values acceptable?" & _
+           vbCrLf & vbCrLf & country & ":" & vbCrLf & _
+           "Volume: " & pvtVOL & " (" & qty & ")" & vbCrLf & _
+           "Value: " & pvtSUM & " (" & amt & ")", _
+           vbQuestion + vbYesNo, "User Input Required")
+
+        If choice = vbYes Then
+            'YES
+            .Cells.Find(country, lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 4
+        Else
+            'NO
+            .Cells.Find(country, lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 3
+        End If
+        
+    End With
+
+End Sub
+
+'MESSAGE BOX ALERT & CHOICES
+Sub korea_india_msgbox(country, qty, amt)
+
+    'ROUNDING
+    qty = Round(qty, 2)
+    amt = Round(amt, 2)
+    country = UCase(country)
+
+    cwb = "CURRENT_WEEK_BACKORDER.xlsx"
+    
+    With Workbooks(cwb).Worksheets("Pivot")
+        
+        'PIVOT VALUES
+        pvtVOL = .Cells.Find("India", lookat:=xlWhole).Offset(, 1)
+        pvtVOL = pvtVOL + .Cells.Find("Korea", lookat:=xlWhole).Offset(, 1)
+        pvtSUM = .Cells.Find("India", lookat:=xlWhole).Offset(, 2)
+        pvtSUM = pvtSUM + .Cells.Find("Korea", lookat:=xlWhole).Offset(, 2)
+        
+    
+        'USER INPUT MSGBOX
+        choice = MsgBox("Are these values acceptable?" & _
+           vbCrLf & vbCrLf & country & ":" & vbCrLf & _
+           "Volume: " & pvtVOL & " (" & qty & ")" & vbCrLf & _
+           "Value: " & pvtSUM & " (" & amt & ")", _
+           vbQuestion + vbYesNo, "User Input Required")
+
+        If choice = vbYes Then
+            'YES
+            .Cells.Find("India", lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 4
+            .Cells.Find("Korea", lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 4
+        Else
+            'NO
+            .Cells.Find("India", lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 3
+            .Cells.Find("Korea", lookat:=xlWhole) _
+                .EntireRow.Interior.ColorIndex = 3
+        End If
+        
+    End With
+
+End Sub
+
+
+'LOOP THRU FOLDER, LOCK FILENAME
+Function loop_thru_fldr(path, wb, e_or_p)
+
+    FILE = Dir(path)
+    While FILE <> ""
+    
+        If InStr(1, FILE, wb, 1) > 0 Then
+            
+            loop_thru_fldr = FILE
+            Exit Function
+            
+        End If
+        
+        FILE = Dir
+    
+    Wend
+
+    MsgBox "file not found!"
+
+End Function
+
+
+
+'OPEN FILE
+Sub open_file(path, wb, read_only)
+
+    If read_only = True Then
+    
+        Workbooks.Open Filename:=path & wb, ReadOnly:=True
+        
+    Else: Workbooks.Open Filename:=path & wb
+    
+    End If
+    
+End Sub
+
+
+'CHECK IF FILE OPEN
+Function is_file_open(wb)
+
+    'LOOP THROUGH OPEN WORKBOOKS
+    For Each Workbook In Application.Workbooks
+        If InStr(1, Workbook.Name, wb, 1) > 0 Then
+            
+            is_file_open = True
+            Exit Function
+        
+        End If
+    Next
+        
+        is_file_open = False
+
+End Function
+
+
+'NO SAVE CLOSE FILE
+Function no_save_close(wb)
+
+    For Each Workbook In Application.Workbooks
+        If InStr(1, Workbook.Name, wb, 1) Then
+            wb = Workbook.Name
+            Workbooks(wb).Close savechanges:=False
+            Exit Function
+        End If
+    Next
+    
+End Function
+
+
+
+
+
+'CONFIRM AUTOFILTER
+Sub confirm_autofilter(filt_row)
+
+    If filt_row = "" Then
+        filt_row = 1
+    End If
+
+    With ActiveSheet
+    
+        If .AutoFilterMode = True Then
+            .Rows(filt_row).AutoFilter
+        End If
+        .Rows(filt_row).AutoFilter
+    
+    End With
+    
+    filt_row = ""
+
+End Sub
+
+
+'SORT FIELDS OF ACTIVE SHEET - DESCENDING
+Sub sort_fields(colVAR)
+
+    colVAR = ActiveSheet.Rows(1).Find(colVAR).Address
+
+    ActiveSheet.AutoFilter.Sort.SortFields.Clear
+    ActiveSheet.AutoFilter.Sort.SortFields.Add2 Key:= _
+        Range(colVAR), SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:= _
+        xlSortNormal
+    With ActiveSheet.AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+End Sub
+
+
+'REMOVE PIVOT TAB IF PRESENT
+Sub remove_pivot_tab()
+
+    ws_count = ActiveWorkbook.Worksheets.Count
+    If ws_count > 1 Then
+        For i = 1 To ws_count
+            If ActiveWorkbook.Worksheets(i).Name = "Pivot" Then
+                ActiveWorkbook.Worksheets(i).Delete
+                Exit Sub
+            End If
+        Next
+    End If
+
+End Sub
+
+
+'EXTRACT ACTIVESHEET LAST COLUMN LETTER
+Function last_col_ltr()
+
+    lcol = ActiveSheet.Range("XEZ1") _
+        .End(xlToLeft).Address
+    fp = InStr(1, lcol, "$", 1)
+    lp = InStrRev(lcol, "$")
+    lcol = _
+        Mid(lcol, fp + 1, lp - 1 - fp)
+    
+    last_col_ltr = lcol
+
+
+End Function
+
+'AFTER PAULS EMAIL RECIEVED
+Sub weekly_backorder_p2()
+
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    
+    
+    'LAST FRIDAYS DATE
+    LFriday = Format(Date - _
+        (Weekday(Date, vbFriday) - 1), _
+        "yyyy-mm-dd")
+        
+    fPath = _
+        "T:\StrykerGSC\Metrics\Weekly Backorder Global\" _
+        & LFriday & "\"
+        
+
+    'OPEN NV WEEKLY BACKORDER REPORT
+    NVWBO = "NV Weekly Backorder Report Week Ending"
+    NVWBO = loop_thru_fldr(fPath, NVWBO, e_or_p)
+    Workbooks.Open fPath & NVWBO
+    With Workbooks(NVWBO).Worksheets("Backorder Detail")
+        .Activate
+        
+        Call confirm_autofilter(filt_row)
+        
+        'COPY REGION & PRODUCT LINE COLUMN
+        .Range("D:D").Copy
+        .Range("E:E").Select
+        Selection.Insert shift:=xlToRight
+        
+        .Range("G:G").Copy
+        .Range("H:H").Select
+        Selection.Insert shift:=xlToRight
+        
+        'FILTER FOR LATEST CYCLE
+        lr = .Range("A1").End(xlDown).row
+        lcol = last_col_ltr()
+        
+        
+        lfri_mon = Format(Date - _
+            (Weekday(Date, vbFriday) - 1), _
+            "mm")
+        If Left(lfri_mon, 1) = "0" Then
+            lfri_mon = Right(lfri_mon, 1)
+            
+        End If
+        
+        lfri_day = Format(Date - _
+            (Weekday(Date, vbFriday) _
+            - 1), "dd")
+        If Left(lfri_day, 1) = "0" Then
+        
+            lfri_day = Right(lfri_day, 1)
+        End If
+        yar = Format(Date, "yyyy")
+        lfri = lfri_mon & "/" & _
+            lfri_day & "/" & yar
+        
+        
+        ActiveSheet.Range _
+            ("$A$1:$" & lcol & "$" & lr) _
+            .AutoFilter Field:=1, Operator:= _
+            xlFilterValues, Criteria2:=Array _
+            (1, lfri)
+    
+    End With
+    
+    'FORMAT CHARTS TAB
+    With Workbooks(NVWBO).Worksheets("Backorder Charts")
+        .Activate
+        
+        ActiveWindow.Zoom = 72
+        .Columns("C:C").ColumnWidth = 15.64
+        .Columns("E:E").ColumnWidth = 16.91
+        .Columns("G:G").ColumnWidth = 16.55
+        .Columns("K:K").ColumnWidth = 19
+        .Columns("P:P").ColumnWidth = 15.27
+        .Columns("Q:Q").ColumnWidth = 12.82
+        .Columns("R:R").ColumnWidth = 16.18
+        .Columns("S:S").ColumnWidth = 12.45
+        .Columns("T:T").ColumnWidth = 19.36
+        .Columns("V:V").ColumnWidth = 17.82
+        .Columns("W:W").ColumnWidth = 23.55
+    
+    End With
+    
+    MsgBox "Weekly Backorder Report Prepped!", _
+        vbInformation + vbOKOnly
+    
+End Sub
+
+
+
+
+
