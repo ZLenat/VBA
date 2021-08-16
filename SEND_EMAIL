@@ -1,0 +1,55 @@
+Dim outlookApp As Outlook.Application
+    Dim outlookMail As Outlook.MailItem
+    
+    Set outlookApp = _
+        New Outlook.Application
+    Set outlookMail = _
+        outlookApp.CreateItem(olMailItem)
+    
+    
+    
+    
+    'RECIPIENTS
+    DL = "SEND_BACKORDER_EMAIL_MACRO.xlsm"
+    With Workbooks(DL).Worksheets(1)
+        lr = .Range("A1").End(xlDown).Row
+        For i = 2 To lr
+            
+            Recipients = _
+                Recipients & .Range("A" & i) & ";"
+            
+        Next
+            
+    End With
+    
+    'CHECK & DELETE IF OLD BACKORDER FILE PRESENT
+'    wb = "Stryker__Backorder_Report_"
+'    check_count = check_thru_fldr(nvcm_path, wb)
+
+    'OPEN NEW BACK ORDER FILE
+'    wb = "Stryker__Backorder_Report_"
+'    wb = loop_thru_fldr(nvcm_path, wb, e_or_p)
+    
+    
+    
+    With outlookMail
+    
+        .To = Recipients
+'        .CC = "zachary.lenat@stryker.com"
+        
+        .Subject = _
+            "Stryker__Backorder_Report_" & tdt
+        .BodyFormat = olFormatHTML
+        .HTMLBody = _
+            "Hi Team," & vbCrLf & vbCrLf & _
+            "Please see attached today's backorder report." _
+            & vbCrLf & vbCrLf & "Thanks,"
+        .Attachments.Add nvcm_path & wb
+        .Send
+        
+    End With
+    
+
+    Set outlookMail = Nothing
+    Set outlookApp = Nothing
+    
