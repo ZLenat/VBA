@@ -1,0 +1,18 @@
+'EXTRACT ACTIVESHEET COLUMN LETTER
+Function col_ltr(col_row)
+
+    If col_row = "" Then
+        col_row = 1
+    End If
+    
+    lcol = ActiveSheet.Range _
+        ("XEX" & col_row).End(xlToLeft).Address
+    fp = InStr(1, lcol, "$", 1)
+    lp = InStrRev(lcol, "$")
+    lcol = _
+        Mid(lcol, fp + 1, lp - 1 - fp)
+    
+    col_ltr = lcol
+    col_row = ""
+    
+End Function
