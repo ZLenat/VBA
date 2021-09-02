@@ -1,5 +1,5 @@
 'LOOP THRU FOLDER, LOCK FILENAME
-Function loop_thru_fldr(path, wb, e_or_p)
+Function loop_thru_fldr(path, wb)
 
     file = Dir(path)
     While file <> ""
