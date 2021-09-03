@@ -1,4 +1,5 @@
 'EXTRACT 3 COLUMNS FROM ACCESS
+'REFERENCES REQUIRED: Microsoft Office 16.0 Access database engine Object Library
     Dim db As DAO.Database
     Dim rs As DAO.Recordset
     Dim SQL As String
