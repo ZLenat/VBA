@@ -1,3 +1,5 @@
+'REFERENCES REQUIRED: Microsoft Outlook 16.0 Object Library
+
 Dim outlookApp As Outlook.Application
     Dim outlookMail As Outlook.MailItem
     
