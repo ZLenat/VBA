@@ -20,3 +20,7 @@
     
     Workbooks(main_file).Worksheets(bom_ws) _
         .Range("AJ2").CopyFromRecordset rs
+        
+    rs.Close
+    Set rs = Nothing
+    Set db = Nothing
