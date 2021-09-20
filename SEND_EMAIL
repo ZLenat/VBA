@@ -46,3 +46,6 @@ Dim outlookApp As Outlook.Application
     Set outlookMail = Nothing
     Set outlookApp = Nothing
     
+    'EMAIL SENT CONFIRMATION
+    MsgBox "Email Sent!", vbInformation + vbOKOnly
+    
