@@ -22,16 +22,7 @@ Dim outlookApp As Outlook.Application
             
         Next
             
-    End With
-    
-    'CHECK & DELETE IF OLD BACKORDER FILE PRESENT
-'    wb = "Stryker__Backorder_Report_"
-'    check_count = check_thru_fldr(nvcm_path, wb)
-
-    'OPEN NEW BACK ORDER FILE
-'    wb = "Stryker__Backorder_Report_"
-'    wb = loop_thru_fldr(nvcm_path, wb, e_or_p)
-    
+    End With  
     
     
     With outlookMail
