@@ -15,5 +15,8 @@ Sub confirm_autofilter(filt_row)
     End With
     
     filt_row = ""
+    
+    'UNHIDE ROWS
+    Rows("1:500000").Hidden = False
 
 End Sub
