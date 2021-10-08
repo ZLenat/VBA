@@ -5,8 +5,8 @@ Function col_ltr(fterm)
         .Find(fterm).Address
     fp = InStr(1, lcol, "$", 1)
     lp = InStrRev(lcol, "$")
-    lcol = _
-        Mid(lcol, fp + 1, lp - 1 - fp)
+    lcol = Mid _
+        (lcol, fp + 1, lp - 1 - fp)
     
     col_ltr = lcol
 
