@@ -1,5 +1,5 @@
 'EXTRACT ACTIVESHEET COLUMN LETTER
-Function col_ltr(fterm)
+Function fterm_col_ltr(fterm)
 
     lcol = ActiveSheet.Cells _
         .Find(fterm).Address
