@@ -8,6 +8,6 @@ Function fterm_col_ltr(fterm)
     lcol = Mid _
         (lcol, fp + 1, lp - 1 - fp)
     
-    col_ltr = lcol
+    fterm_col_ltr = lcol
 
 End Function
