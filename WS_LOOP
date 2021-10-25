@@ -1,0 +1,13 @@
+Function loop_sheets(wb, ws_term)
+
+    Dim ws As Worksheet
+    For Each ws In Workbooks(wb).Worksheets
+        
+        If InStr(ws.Name, ws_term) Then
+            loop_sheets = ws.Name
+            Exit Function
+        End If
+        
+    Next ws
+
+End Function
