@@ -1,6 +1,6 @@
 
 'SELECT FILE
-Function find_file()
+Function find_file_Picker()
 
     With Application.FileDialog(msoFileDialogFilePicker)
             
