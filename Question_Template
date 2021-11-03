@@ -1,0 +1,14 @@
+Sub QuestionName_q()
+
+    'LATEST ... FILE CHECK
+    q = MsgBox _
+        ("Latest ... File Downloaded into '...' folder?", _
+        vbQuestion + vbYesNo)
+    If q = vbNo Then
+        MsgBox _
+            "Please download the latest ... file and restart this procedure!", _
+            vbCritical
+        End
+    End If
+
+End Sub
