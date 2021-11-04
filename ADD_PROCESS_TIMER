@@ -1,0 +1,25 @@
+'ADD THIS TO TOP OF PRCEDURE
+
+    Dim starttime As Long
+    Dim endtime As Long
+    Dim xtime As Long
+
+    starttime = Timer()
+    
+    ...
+    ...
+    ...
+    
+    
+    'ADD THIS TO END OF PROCEDURE
+    
+    'TIMER
+    endtime = Timer()
+    xtime = endtime - starttime
+
+    'END MSGBOX
+    MsgBox "...Process Complete!" _
+        & vbCrLf & vbCrLf & "Processing Time: " & _
+        xtime & " seconds!", _
+        vbOKOnly + vbInformation, _
+        "Process Notification"
