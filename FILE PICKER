@@ -10,7 +10,7 @@ Function find_file_Picker()
         
             get_path = .SelectedItems(1)
             Workbooks.Open (get_path)
-            find_file = ActiveWorkbook.Name
+            find_file_Picker = ActiveWorkbook.Name
             
         Else: MsgBox "No File Selected!" _
             & vbCrLf & vbCrLf & _
