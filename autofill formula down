@@ -1,0 +1,10 @@
+lr = .Range("B20000").End(xlUp).Row
+        .Range("A" & new_lr & ":A" & lr) = "BSC Venlo"
+
+        'COPY FORMULAS DOWN
+        fLR = .Range("C300000").End(xlUp).Row
+        If fLR <> lr And fLR < lr Then
+            .Range("C" & fLR & ":F" & fLR).Select
+            Selection.AutoFill _
+                Destination:=.Range("C" & fLR & ":F" & lr)
+        End If
