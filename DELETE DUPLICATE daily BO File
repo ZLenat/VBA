@@ -1,5 +1,5 @@
 'CHECK HOW FILES IN FODLER
-Function check_thru_fldr(path, wb)
+Function delete_dupe(path, wb)
 
     
     CCount = 0
